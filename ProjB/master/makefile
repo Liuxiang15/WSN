@@ -1,0 +1,2 @@
+COMPONENT=MasterAppC
+include $(MAKERULES)
