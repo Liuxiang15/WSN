@@ -1,3 +1,5 @@
+#include "printf.h"
+
 module MasterC {
     uses interface Boot;
     uses interface Timer<TMilli> as Timer;
@@ -19,7 +21,9 @@ module MasterC {
 implementation {
     event void Boot.booted()
     {
-
+        call AMControl.start();
+        printf("g");
+        printfflush();
     }
 
     event void Timer.fired()
@@ -29,7 +33,14 @@ implementation {
 
     event void AMControl.startDone(error_t err)
     {
-
+        if(err == SUCCESS)
+        {
+            call Timer.startPeriodic(100);
+        }
+        else
+        {
+            call AMControl.start();
+        }
     }
 
     event void AMControl.stopDone(error_t err)
@@ -54,6 +65,6 @@ implementation {
 
     event message_t* ResponseReceive.receive(message_t* msg, void* payload, uint8_t len)
     {
-        
+
     }
 }
