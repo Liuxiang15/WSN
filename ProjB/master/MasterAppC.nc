@@ -1,11 +1,12 @@
 #include"../aggregator.h"
+#include "printf.h"
 
 configuration MasterAppC{
 
 }
 
 implementation {
-    components MainC, LedsC;
+    components MainC, LedsC, PrintfC;
     components new TimerMilliC() as Timer;
     components ActiveMessageC;
     components new AMSenderC(AM_RESULT_MSG) as ResultSender;
