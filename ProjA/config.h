@@ -9,9 +9,9 @@ enum {
     AM_0_TO_1 = 88,
     AM_1_TO_2 = 99,
 
-    NODE_0 = 0,
-    NODE_1 = 1,
-    NODE_2 = 2,
+    NODE_0 = 31,
+    NODE_1 = 32,
+    NODE_2 = 33,
 
     TIMER_PERIOD_MILLI = 200,
     QUEUE_SIZE = 32

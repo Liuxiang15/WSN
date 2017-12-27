@@ -29,7 +29,7 @@ if '-h' in sys.argv:
 am = tos.AM()
 
 msg = ModifyMsg()
-msg.frequency = 1000
+msg.frequency = int(sys.argv[2])
 print am.write(msg, amId = AM_PC_TO_0)
 
 while True:

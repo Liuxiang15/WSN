@@ -1,72 +1,77 @@
-#!/usr/bin/env python
-
 import sys
-import tos
+import subprocess
 
-from PyQt5.QtWidgets import (QWidget, QToolTip,
-    QPushButton, QApplication,QLabel,QLineEdit,QMessageBox)
-from PyQt5 import QtCore
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+import pyqtgraph as pg
 
-AM_0_TO_PC = 66
-AM_PC_TO_0 = 77
+NODE1_ID = 32
+NODE2_ID = 33
 
-class SensorMsg(tos.Packet):
-    def __init__(self, packet = None):
-        tos.Packet.__init__(self, [
-            ('nodeid',  'int', 2),
-            ('counter', 'int', 2),
-            ('temperature', 'int', 2),
-            ('humidity', 'int', 2),
-            ('illumination', 'int', 2),
-            ('timepoint', 'int', 2)],
-        packet)
-
-if '-h' in sys.argv:
-    print "Usage:", sys.argv[0], "serial@/dev/ttyUSB0:115200"
-    sys.exit()
-
-am = tos.AM()
-
-# data
-node1_counter_list = []
-node2_counter_list = []
+node1_previous_counter = -1
+node2_previous_counter = -1
 node1_temp_list = []
 node1_hum_list = []
 node1_ill_list = []
 node2_temp_list = []
 node2_hum_list = []
 node2_ill_list = []
+frequency = 0
 
 f = open('result.txt','w')
+server = subprocess.Popen(['python', '-u', 'oscilloscope.py', 'serial@/dev/ttyUSB1:115200', '200'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-while True:
-    p = am.read()
-    if p and p.type == AM_0_TO_PC:
-        msg = SensorMsg(p.data)
-        print msg.nodeid, msg.counter, msg.temperature, msg.humidity, msg.illumination, msg.timepoint
+class Msg:
+    def __init__(self):
+        self.nodeid = 0
+        self.counter = 0
+        self.temperature = 0
+        self.humidity = 0
+        self.illumination = 0
+        self.timepoint = 0
 
-        if msg.nodeid == 1:
-            if msg.counter not in node1_counter_list:
-                node1_counter_list.append(msg.counter)
-                node1_temp_list.append(msg.temperature)
-                node1_hum_list.append(msg.humidity)
-                node1_ill_list.append(msg.illumination)
-                f.write('%d %d %d %d %d %d\n' % (msg.nodeid, msg.counter, msg.temperature, msg.humidity, msg.illumination, msg.timepoint))
-            else:
-                pass
-        elif msg.nodeid == 2:
-            if msg.counter not in node2_counter_list:
-                node2_counter_list.append(msg.counter)
-                node2_temp_list.append(msg.temperature)
-                node2_hum_list.append(msg.humidity)
-                node2_ill_list.append(msg.illumination)
-                f.write('%d %d %d %d %d %d\n' % (msg.nodeid, msg.counter, msg.temperature, msg.humidity, msg.illumination, msg.timepoint))
-            else:
-                pass
-        else:
-            pass
 
-frequency = 0
+class CollectData(QThread):
+    def __init__(self, parent=None):
+        super(CollectData, self).__init__()
+
+    def __del__(self):
+        self.wait()
+
+    def run(self):
+        msg = Msg()
+        while True:
+            try:
+                line = server.stdout.readline()
+                params = [int(x) for x in line.split()]
+            except:
+                continue
+            if len(params) != 6:
+                continue
+
+            msg.nodeid = params[0]
+            msg.counter = params[1]
+            msg.temperature = params[2]
+            msg.humidity = params[3]
+            msg.illumination = params[4]
+            msg.timepoint = params[5]
+
+            if msg.nodeid == NODE1_ID:
+                if msg.counter != node1_previous_counter:
+                    previous_counter = msg.counter
+                    node1_temp_list.append(msg.temperature)
+                    node1_hum_list.append(msg.humidity)
+                    node1_ill_list.append(msg.illumination)
+                    f.write('%d %d %d %d %d %d\n' % (msg.nodeid, msg.counter, msg.temperature, msg.humidity, msg.illumination, msg.timepoint))
+            elif msg.nodeid == NODE2_ID:
+                if msg.counter != node2_previous_counter:
+                    previous_counter = msg.counter
+                    node2_temp_list.append(msg.temperature)
+                    node2_hum_list.append(msg.humidity)
+                    node2_ill_list.append(msg.illumination)
+                    f.write('%d %d %d %d %d %d\n' % (msg.nodeid, msg.counter, msg.temperature, msg.humidity, msg.illumination, msg.timepoint))
+
 
 class PictureWindow(QWidget):
     def __init__(self):
@@ -103,8 +108,8 @@ class PictureWindow(QWidget):
         self.show()
 
         # timer
-        self.checkTimer = QtCore.QTimer()
-        self.checkTimer.setInterval(100)
+        self.checkTimer = QTimer()
+        self.checkTimer.setInterval(50)
         self.checkTimer.timeout.connect(self.draw)
         self.checkTimer.start()
 
@@ -115,7 +120,6 @@ class PictureWindow(QWidget):
         self.plotIll = self.win.addPlot(title='光照强度变化')
 
         pg.QtGui.QApplication.exec_()
-
 
     def draw(self):
         # temp plot
@@ -157,8 +161,12 @@ class PictureWindow(QWidget):
         raw_fre = self.setlineEdit.text()
         if raw_fre.isdigit():
             frequency = int(raw_fre)
+            global server
+            server.kill()
+            server = subprocess.Popen(['python', '-u', 'oscilloscope.py', 'serial@/dev/ttyUSB1:115200', str(frequency)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             reply = QMessageBox.question(self, 'Success',
                                          "The frequency has been changed to %d." % (frequency), QMessageBox.Yes)
+
         else:
             reply = QMessageBox.question(self, 'Invalid',
                                          "Your input is invalid!", QMessageBox.Yes)
@@ -170,5 +178,7 @@ class PictureWindow(QWidget):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+    thread = CollectData()
+    thread.start()
     ex = PictureWindow()
     sys.exit(app.exec_())
