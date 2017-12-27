@@ -18,7 +18,8 @@ implementation {
     components MasterC;
 
     MasterC.Boot -> MainC.Boot;
-    MasterC.Timer ->Timer;
+    MasterC.Timer -> Timer;
+    MasterC.Leds -> LedsC;
     MasterC.AMControl -> ActiveMessageC.SplitControl;
 
     MasterC.ResultSend -> ResultSender.AMSend;

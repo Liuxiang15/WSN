@@ -52,6 +52,7 @@ implementation {
     {
         if(err == SUCCESS)
         {
+            assistFull = FALSE;
             call Timer.startPeriodic(100);
         }
         else
@@ -67,7 +68,7 @@ implementation {
 
     event void Timer.fired()
     {
-        call Leds.led1Toggle();
+        //call Leds.led1Toggle();
     }
 
     event message_t* RequestReceive.receive(message_t* msg, void* payload, uint8_t len)
@@ -76,12 +77,21 @@ implementation {
         uint16_t seq;
         if(len == sizeof(Request_Msg))
         {
-            call Leds.led0Toggle();
+            call Leds.led1Toggle();
             seq = ((Request_Msg*)payload)->seq;
+            //printf("req = %u %lu\n", seq, numbers[seq]);
             if (numbers[seq] != UINT_MAX)
             {
                 responseMsg = (Response_Msg*)(call ResponseSendPacket.getPayload(&pkt, sizeof(Response_Msg)));
-                atomic if (responseMsg != NULL && !assistFull)
+                if (responseMsg == NULL)
+                {
+                    return msg;
+                }
+
+                responseMsg->seq = seq;
+                responseMsg->num = numbers[seq];
+
+                atomic if (!assistFull)
                 {
                     assistQueueBufs[assistIn] = pkt;
                     if (++assistIn >= QUEUE_SIZE)
@@ -156,7 +166,7 @@ implementation {
             rcv_payload = (Data_Msg*)payload;
             numbers[rcv_payload->seq - 1] = rcv_payload->num;
             //printf("n[%u] = %u.\n", rcv_payload->seq - 1, rcv_payload->num);
-            printfflush();
+            //printfflush();
         }
         return msg;
     }
