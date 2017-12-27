@@ -159,7 +159,7 @@ implementation {
 
     event message_t* ModifyReceive.receive(message_t* msg, void* payload, uint8_t len) {
         if (len == sizeof(ModifyMsg)) {
-            call Leds.led1Toggle();
+            call Timer.startPeriodic(((ModifyMsg*)payload)->frequency);
         }
         return msg;
     }

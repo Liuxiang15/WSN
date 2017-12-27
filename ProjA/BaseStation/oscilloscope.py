@@ -17,11 +17,21 @@ class SensorMsg(tos.Packet):
             ('timepoint', 'int', 2)],
         packet)
 
+class ModifyMsg(tos.Packet):
+    def __init__(self, packet = None):
+        tos.Packet.__init__(self, [
+            ('frequency', 'int', 2)],
+        packet)
+
 if '-h' in sys.argv:
     print "Usage:", sys.argv[0], "serial@/dev/ttyUSB0:115200"
     sys.exit()
 
 am = tos.AM()
+
+msg = ModifyMsg()
+msg.frequency = 1000
+print am.write(msg, amId = AM_PC_TO_0)
 
 while True:
     p = am.read()
