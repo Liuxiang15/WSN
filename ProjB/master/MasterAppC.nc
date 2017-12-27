@@ -13,6 +13,7 @@ implementation {
     components new AMSenderC(AM_REQUEST_MSG) as RequestSender;
     components new AMReceiverC(AM_DATA_MSG) as DataReceiver;
     components new AMReceiverC(AM_RESPONSE_MSG) as ResponseReceiver;
+    components new AMReceiverC(AM_ACK_MSG) as ACKReceiver;
 
     components MasterC;
 
@@ -29,4 +30,6 @@ implementation {
     MasterC.DataReceivePacket -> DataReceiver.Packet;
     MasterC.ResponseReceive -> ResponseReceiver.Receive;
     MasterC.ResponseReceivePacket -> ResponseReceiver.Packet;
+
+    MasterC.ACKReceive -> ACKReceiver.Receive;
 }

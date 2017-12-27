@@ -34,11 +34,17 @@ typedef nx_struct Response_Msg
     nx_uint32_t num;
 } Response_Msg;
 
+typedef nx_struct ACK_Msg
+{
+    nx_uint8_t group;
+} ACK_Msg;
+
 enum {
     AM_DATA_MSG= 6,
     AM_RESULT_MSG = 7,
     AM_REQUEST_MSG = 8,
-    AM_RESPONSE_MSG = 9
+    AM_RESPONSE_MSG = 9,
+    AM_ACK_MSG = 10,
 };
 
 enum {

@@ -17,6 +17,8 @@ module MasterC {
 
     uses interface Packet as DataReceivePacket;
     uses interface Packet as ResponseReceivePacket;
+
+    uses interface Receive as ACKReceive;
 }
 
 implementation {
@@ -34,6 +36,7 @@ implementation {
 
     uint32_t max = 0, min = UINT_MAX, sum = 0, average = 0, median = 0;
 
+    uint8_t completed = 0;
     message_t result_pkt, request_pkt;
 
     event void Boot.booted()
@@ -48,9 +51,16 @@ implementation {
 
     event void Timer.fired()
     {
-        if(max_seq > confirmed_end + 1)
+        if(completed == 0)
         {
-            send_request(confirmed_end + 1 + start_seq) % DATA_TOTAL;
+            if(max_seq > confirmed_end + 1)
+            {
+                send_request(confirmed_end + 1 + start_seq) % DATA_TOTAL;
+            }
+        }
+        else if(completed == 1)
+        {
+            send_result();
         }
     }
 
@@ -328,7 +338,10 @@ implementation {
         }
 
         if(received_sum == DATA_TOTAL)
+        {
             send_result();
+            completed = 1;
+        }
 
         printf("Already adjusted heaps.\n");
         printfflush();
@@ -336,6 +349,9 @@ implementation {
 
     event message_t* DataReceive.receive(message_t* msg, void* payload, uint8_t len)
     {
+        if(completed != 0)
+            return msg;
+
         Data_Msg* rcv_payload;
         uint16_t seq;
         uint32_t num;
@@ -357,6 +373,9 @@ implementation {
 
     event message_t* ResponseReceive.receive(message_t* msg, void* payload, uint8_t len)
     {
+        if(completed != 0)
+            return msg;
+
         Response_Msg* rcv_payload;
         uint16_t seq;
         uint32_t num;
@@ -372,6 +391,20 @@ implementation {
             printfflush();
 
             process_new_number(seq, num);
+        }
+        return msg;
+    }
+
+    event message_t* ACKReceive.receive(message_t* msg, void* payload, uint8_t len)
+    {
+        ACK_Msg* rcv_payload;
+        if(len == sizeof(ACK_Msg))
+        {
+            rcv_payload = (ACK_Msg*)payload;
+            if(payload->group == GROUP_ID)
+            {
+                completed = 2;
+            }
         }
         return msg;
     }
