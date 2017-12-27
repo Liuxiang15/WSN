@@ -50,7 +50,7 @@ implementation {
     {
         if(max_seq > confirmed_end + 1)
         {
-            send_request(confirmed_end + 1);
+            send_request(confirmed_end + 1 + start_seq) % DATA_TOTAL;
         }
     }
 
@@ -74,17 +74,21 @@ implementation {
     void register_new_number(uint16_t seq, uint32_t num)
     {
         received_sum += 1;
-    	received[seq / 8] |= (1 << (seq % 8));
 
     	if (received_sum == 1)
     	{
-    		max_seq = seq;
-    		confirmed_end = seq;
+    		max_seq = 0;
+    		confirmed_end = 0;
             start_seq = seq;
+            received[0] = 1;
     	}
     	else
     	{
             uint16_t i;
+
+            seq = (seq - start_seq + DATA_TOTAL) % DATA_TOTAL;
+            received[seq / 8] |= (1 << (seq % 8));
+
     		max_seq = max_seq > seq ? max_seq : seq;
 
     		for (i = confirmed_end + 1; i <= max_seq; i++)
