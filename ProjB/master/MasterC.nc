@@ -20,17 +20,14 @@ module MasterC {
 }
 
 implementation {
-    enum {
-        HALF_DATA_TOTAL = 1000,
-        DATA_TOTAL = 2000,
-    };
+
     uint16_t received_sum = 0;
     uint16_t max_seq = 0;
     uint16_t confirmed_end = 0;
 
     uint8_t vice_num = 0;
 
-    uint8_t received[251];
+    uint8_t received[EIGHTH_DATA_TOTAL];
     uint32_t small_heap[HALF_DATA_TOTAL], big_heap[HALF_DATA_TOTAL];
     uint16_t small_heap_size = 0, big_heap_size = 0;
 
@@ -41,7 +38,7 @@ implementation {
     event void Boot.booted()
     {
         uint16_t i;
-        for(i = 0; i < DATA_TOTAL; i++)
+        for(i = 0; i < EIGHTH_DATA_TOTAL; i++)
         {
             received[i] = 0;
         }

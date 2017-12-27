@@ -10,7 +10,7 @@ implementation {
     components new TimerMilliC() as Timer;
     components ActiveMessageC;
     components new AMSenderC(AM_RESULT_MSG) as ResultSender;
-    components new AMSenderC(AM_RESULT_MSG) as RequestSender;
+    components new AMSenderC(AM_REQUEST_MSG) as RequestSender;
     components new AMReceiverC(AM_DATA_MSG) as DataReceiver;
     components new AMReceiverC(AM_RESPONSE_MSG) as ResponseReceiver;
 
