@@ -22,6 +22,7 @@ module MasterC {
 implementation {
 
     uint16_t received_sum = 0;
+    uint16_t start_seq = 0;
     uint16_t max_seq = 0;
     uint16_t confirmed_end = 0;
 
@@ -47,14 +48,17 @@ implementation {
 
     event void Timer.fired()
     {
-
+        if(max_seq > confirmed_end + 1)
+        {
+            send_request(confirmed_end + 1);
+        }
     }
 
     event void AMControl.startDone(error_t err)
     {
         if(err == SUCCESS)
         {
-            call Timer.startPeriodic(100);
+            call Timer.startPeriodic(20);
         }
         else
         {
@@ -76,24 +80,20 @@ implementation {
     	{
     		max_seq = seq;
     		confirmed_end = seq;
+            start_seq = seq;
     	}
     	else
     	{
             uint16_t i;
     		max_seq = max_seq > seq ? max_seq : seq;
 
-    		for (i = confirmed_end + 1; i <= max_seq; i++)
+    		for (i = confirmed_end + 1; i != start_seq; i = i % DATA_TOTAL + 1)
     		{
     			if ((received[i / 8] & (1 << (i % 8))) == 0)
     				break;
     		}
     		confirmed_end = i - 1;
     		printf("confirmed_end now is %u.\n", confirmed_end);
-
-            if(max_seq > confirmed_end + 1)
-            {
-                send_request(confirmed_end + 1);
-            }
     	}
     }
 
