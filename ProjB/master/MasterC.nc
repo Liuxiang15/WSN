@@ -327,6 +327,9 @@ implementation {
             adjust_small_heap();
         }
 
+        if(received_sum == DATA_TOTAL)
+            send_result();
+
         printf("Already adjusted heaps.\n");
         printfflush();
     }
