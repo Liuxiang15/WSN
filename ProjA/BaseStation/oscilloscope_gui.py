@@ -3,9 +3,10 @@
 import sys
 import tos
 
-from PyQt5.QtWidgets import (QWidget, QToolTip,
-    QPushButton, QApplication,QLabel,QLineEdit,QMessageBox)
-from PyQt5 import QtCore
+
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
 
 AM_0_TO_PC = 66
 AM_PC_TO_0 = 77
@@ -28,8 +29,7 @@ if '-h' in sys.argv:
 am = tos.AM()
 
 # data
-node1_counter_list = []
-node2_counter_list = []
+previous_counter = -1
 node1_temp_list = []
 node1_hum_list = []
 node1_ill_list = []
@@ -39,32 +39,42 @@ node2_ill_list = []
 
 f = open('result.txt','w')
 
-while True:
-    p = am.read()
-    if p and p.type == AM_0_TO_PC:
-        msg = SensorMsg(p.data)
-        print msg.nodeid, msg.counter, msg.temperature, msg.humidity, msg.illumination, msg.timepoint
+class CollectData(QThread):
+    def __init__(self, parent=None):
+        super(CollectData, self).__init__()
 
-        if msg.nodeid == 1:
-            if msg.counter not in node1_counter_list:
-                node1_counter_list.append(msg.counter)
-                node1_temp_list.append(msg.temperature)
-                node1_hum_list.append(msg.humidity)
-                node1_ill_list.append(msg.illumination)
-                f.write('%d %d %d %d %d %d\n' % (msg.nodeid, msg.counter, msg.temperature, msg.humidity, msg.illumination, msg.timepoint))
-            else:
-                pass
-        elif msg.nodeid == 2:
-            if msg.counter not in node2_counter_list:
-                node2_counter_list.append(msg.counter)
-                node2_temp_list.append(msg.temperature)
-                node2_hum_list.append(msg.humidity)
-                node2_ill_list.append(msg.illumination)
-                f.write('%d %d %d %d %d %d\n' % (msg.nodeid, msg.counter, msg.temperature, msg.humidity, msg.illumination, msg.timepoint))
-            else:
-                pass
-        else:
-            pass
+    def __del__(self):
+        self.wait()
+
+    def run(self):
+        while True:
+            p = am.read()
+            if p and p.type == AM_0_TO_PC:
+                msg = SensorMsg(p.data)
+                print msg.nodeid, msg.counter, msg.temperature, msg.humidity, msg.illumination, msg.timepoint
+
+                if msg.nodeid == 1:
+                    if msg.counter != previous_counter:
+                        previous_counter = msg.counter
+                        node1_temp_list.append(msg.temperature)
+                        node1_hum_list.append(msg.humidity)
+                        node1_ill_list.append(msg.illumination)
+                        f.write('%d %d %d %d %d %d\n' % (msg.nodeid, msg.counter, msg.temperature, msg.humidity, msg.illumination, msg.timepoint))
+                    else:
+                        pass
+                elif msg.nodeid == 2:
+                    if msg.counter != previous_counter:
+                        previous_counter = msg.counter
+                        node2_temp_list.append(msg.temperature)
+                        node2_hum_list.append(msg.humidity)
+                        node2_ill_list.append(msg.illumination)
+                        f.write('%d %d %d %d %d %d\n' % (msg.nodeid, msg.counter, msg.temperature, msg.humidity, msg.illumination, msg.timepoint))
+                    else:
+                        pass
+                else:
+                    pass
+
+
 
 frequency = 0
 
@@ -115,6 +125,11 @@ class PictureWindow(QWidget):
         self.plotIll = self.win.addPlot(title='光照强度变化')
 
         pg.QtGui.QApplication.exec_()
+
+        self.thread = CollectData()
+        self.thread.start()
+
+
 
 
     def draw(self):
