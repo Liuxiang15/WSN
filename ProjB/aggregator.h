@@ -5,6 +5,7 @@ enum {
     EIGHTH_DATA_TOTAL = 251,
     HALF_DATA_TOTAL = 1000,
     DATA_TOTAL = 2000,
+    QUEUE_SIZE = 16,
 };
 
 typedef nx_struct Data_Msg
@@ -40,20 +41,22 @@ typedef nx_struct ACK_Msg
 } ACK_Msg;
 
 enum {
-    AM_DATA_MSG= 6,
-    AM_RESULT_MSG = 7,
-    AM_REQUEST_MSG = 8,
-    AM_RESPONSE_MSG = 9,
-    AM_ACK_MSG = 10,
+    AM_DATA_MSG = 0x0,
+    AM_RESULT_MSG = 0x60,
+    AM_REQUEST_MSG = 0x70,
+    AM_RESPONSE_MSG = 0x80,
+    AM_ACK_MSG = 0x0,
 };
 
 enum {
-    TARGET_ID = 0,
-    GROUP_ID = 20,
+    GROUP_ID = 10,
+    MASTER_ID = 31,
+    ASSIST_LEFT_ID = 32,
+    ASSIST_RIGHT_ID = 33,
 };
 
 enum {
-    UINT_MAX = 4294967295,
+    UINT_MAX = 2147483647,
 };
 
 #endif

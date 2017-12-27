@@ -17,10 +17,13 @@ implementation {
 
     AssistC.Boot -> MainC.Boot;
     AssistC.Timer -> Timer;
+    AssistC.Leds -> LedsC;
     AssistC.AMControl -> ActiveMessageC.SplitControl;
 
     AssistC.ResponseSend -> ResponseSender.AMSend;
     AssistC.ResponseSendPacket -> ResponseSender.Packet;
+    AssistC.ResponseSendAMPacket -> ResponseSender;
+    AssistC.assistAck -> ResponseSender;
 
     AssistC.RequestReceive -> RequestReceiver.Receive;
     AssistC.RequestReceivePacket -> RequestReceiver.Packet;

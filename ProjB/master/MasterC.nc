@@ -85,7 +85,7 @@ implementation {
     {
         received_sum += 1;
 
-    	if (received_sum == 1)
+    	atomic if (received_sum == 1)
     	{
     		max_seq = 0;
     		confirmed_end = 0;
@@ -381,15 +381,9 @@ implementation {
         uint32_t num;
         if(len == sizeof(Response_Msg))
         {
-            printf("New response has been successfully received.\n");
-            printfflush();
-
             rcv_payload = (Response_Msg*) payload;
             seq = rcv_payload->seq;
             num = rcv_payload->num;
-            printf("Sequence is %u and number is %lu.\n", seq, num);
-            printfflush();
-
             process_new_number(seq, num);
         }
         return msg;
