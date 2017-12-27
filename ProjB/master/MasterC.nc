@@ -20,15 +20,14 @@ module MasterC {
 }
 
 implementation {
-    enum {
-        HALF_DATA_TOTAL = 1000,
-        DATA_TOTAL = 2000,
-    };
+
     uint16_t received_sum = 0;
     uint16_t max_seq = 0;
     uint16_t confirmed_end = 0;
 
-    uint8_t received[251];
+    uint8_t vice_num = 0;
+
+    uint8_t received[EIGHTH_DATA_TOTAL];
     uint32_t small_heap[HALF_DATA_TOTAL], big_heap[HALF_DATA_TOTAL];
     uint16_t small_heap_size = 0, big_heap_size = 0;
 
@@ -39,7 +38,7 @@ implementation {
     event void Boot.booted()
     {
         uint16_t i;
-        for(i = 0; i < DATA_TOTAL; i++)
+        for(i = 0; i < EIGHTH_DATA_TOTAL; i++)
         {
             received[i] = 0;
         }
@@ -83,13 +82,18 @@ implementation {
             uint16_t i;
     		max_seq = max_seq > seq ? max_seq : seq;
 
-    		for (i = confirmed_end; i <= DATA_TOTAL; i++)
+    		for (i = confirmed_end + 1; i <= max_seq; i++)
     		{
     			if ((received[i / 8] & (1 << (i % 8))) == 0)
     				break;
     		}
     		confirmed_end = i - 1;
     		printf("confirmed_end now is %u.\n", confirmed_end);
+
+            if(max_seq > confirmed_end + 1)
+            {
+                send_request(confirmed_end + 1);
+            }
     	}
     }
 
@@ -262,6 +266,19 @@ implementation {
             payload->median = (big_heap[0] + small_heap[0]) / 2;
 
             call ResultSend.send(TARGET_ID, &result_pkt, sizeof(Result_Msg));
+        }
+    }
+
+    void send_request(uint16_t seq)
+    {
+        Request_Msg* payload;
+        payload = (Request_Msg*)(call RequestSendPacket.getPayload(&request_pkt, sizeof(Request_Msg)));
+        if(payload != NULL)
+        {
+            payload->seq = seq;
+
+            call RequestSend.send(TOS_NODE_ID + vice_num + 1, &request_pkt, sizeof(Request_Msg));
+            vice_num = 1 - vice_num;
         }
     }
 
