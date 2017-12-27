@@ -248,6 +248,23 @@ implementation {
         }
     }
 
+    void send_result()
+    {
+        Result_Msg* payload;
+        payload = (Result_Msg*)(call ResultSendPacket.getPayload(&result_pkt, sizeof(Result_Msg)));
+        if(payload != NULL)
+        {
+            payload->group = GROUP_ID;
+            payload->max = max;
+            payload->min = min;
+            payload->sum = sum;
+            payload->average = sum / DATA_TOTAL;
+            payload->median = (big_heap[0] + small_heap[0]) / 2;
+
+            call ResultSend.send(TARGET_ID, &result_pkt, sizeof(Result_Msg));
+        }
+    }
+
     event void ResultSend.sendDone(message_t* msg, error_t err)
     {
         if(&result_pkt == msg && err == SUCCESS)
@@ -316,6 +333,22 @@ implementation {
 
     event message_t* ResponseReceive.receive(message_t* msg, void* payload, uint8_t len)
     {
+        Response_Msg* rcv_payload;
+        uint16_t seq;
+        uint32_t num;
+        if(len == sizeof(Response_Msg))
+        {
+            printf("New response has been successfully received.\n");
+            printfflush();
+
+            rcv_payload = (Response_Msg*) payload;
+            seq = rcv_payload->seq;
+            num = rcv_payload->num;
+            printf("Sequence is %u and number is %lu.\n", seq, num);
+            printfflush();
+
+            process_new_number(seq, num);
+        }
         return msg;
     }
 }
