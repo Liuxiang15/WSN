@@ -88,7 +88,7 @@ implementation {
     {
         received_sum += 1;
 
-    	atomic if (received_sum == 1)
+    	if (received_sum == 1)
     	{
     		max_seq = 0;
     		confirmed_end = 0;
@@ -325,37 +325,39 @@ implementation {
     {
         if((received[seq / 8] & (1 << (seq % 8))) != 0)
             return;
-        register_new_number(seq, num);
-        calculate_basic_parts(num);
-        insert_into_heap(num);
+        atomic{
+            register_new_number(seq, num);
+            calculate_basic_parts(num);
+            insert_into_heap(num);
 
-        if(small_heap_size > big_heap_size + 1)
-        {
-            uint32_t temp = small_heap[0];
-            extract_small_heap();
-            big_heap[big_heap_size] = temp;
-            big_heap_size += 1;
-            adjust_big_heap();
-        }//
-        else if(small_heap_size < big_heap_size - 1)
-        {
-            uint32_t temp = big_heap[0];
-            extract_big_heap();
-            small_heap[small_heap_size] = temp;
-            small_heap_size += 1;
-            adjust_small_heap();
-        }
+            if(small_heap_size > big_heap_size + 1)
+            {
+                uint32_t temp = small_heap[0];
+                extract_small_heap();
+                big_heap[big_heap_size] = temp;
+                big_heap_size += 1;
+                adjust_big_heap();
+            }//
+            else if(small_heap_size < big_heap_size - 1)
+            {
+                uint32_t temp = big_heap[0];
+                extract_big_heap();
+                small_heap[small_heap_size] = temp;
+                small_heap_size += 1;
+                adjust_small_heap();
+            }
 
-        if(received_sum == DATA_TOTAL)
-        {
-            send_result();
-            completed = 1;
-            printf("C[%u,%u]\n", received_sum, DATA_TOTAL);
+            if(received_sum == DATA_TOTAL)
+            {
+                send_result();
+                completed = 1;
+                printf("C[%u,%u]\n", received_sum, DATA_TOTAL);
+                printfflush();
+            }
+
+            printf("Done.\n");
             printfflush();
         }
-
-        printf("Done.\n");
-        printfflush();
     }
 
     event message_t* DataReceive.receive(message_t* msg, void* payload, uint8_t len)
