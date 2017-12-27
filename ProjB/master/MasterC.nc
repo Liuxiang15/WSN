@@ -1,4 +1,5 @@
 #include "printf.h"
+#include "../aggregator.h"
 
 module MasterC {
     uses interface Boot;
@@ -20,19 +21,18 @@ module MasterC {
 
 implementation {
     enum {
-        UINT16_MAX = 65535,
         HALF_DATA_TOTAL = 1000,
         DATA_TOTAL = 2000,
     };
     uint16_t received_sum = 0;
-    uint16_t data_start = 0;
+    uint16_t max_seq = 0;
     uint16_t confirmed_end = 0;
 
-    uint8_t received[DATA_TOTAL];
+    uint8_t received[251];
     uint32_t small_heap[HALF_DATA_TOTAL], big_heap[HALF_DATA_TOTAL];
     uint16_t small_heap_size = 0, big_heap_size = 0;
 
-    uint32_t max = 0, min = UINT16_MAX, sum = 0, average = 0, median = 0;
+    uint32_t max = 0, min = 1 << 32 - 1, sum = 0, average = 0, median = 0;
 
     message_t result_pkt, request_pkt;
 
@@ -70,30 +70,27 @@ implementation {
 
     void register_new_number(uint16_t seq, uint32_t num)
     {
-        if(received[seq] == 1)
-            return;
-
         received_sum += 1;
-        received[seq] = 1;
+    	received[seq / 8] |= (1 << (seq % 8));
 
-        if(received_sum == 1)
-        {
-            data_start = seq;
-            confirmed_end = seq;
-            printf("data start is %u\n", data_start);
-        }
-        else
-        {
-            uint8_t i;
-            for(i = confirmed_end + 1; i != confirmed_end; i = (i % DATA_TOTAL) + 1)
-            {
-                if(received[i] == 1)
-                {
-                    confirmed_end = i;
-                }
-            }
-            printf("confirmed_end now is %u.\n", confirmed_end);
-        }
+    	if (received_sum == 1)
+    	{
+    		max_seq = seq;
+    		confirmed_end = seq;
+    	}
+    	else
+    	{
+            uint16_t i;
+    		max_seq = max_seq > seq ? max_seq : seq;
+
+    		for (i = confirmed_end; i <= DATA_TOTAL; i++)
+    		{
+    			if ((received[i / 8] & (1 << (i % 8))) == 0)
+    				break;
+    		}
+    		confirmed_end = i - 1;
+    		printf("confirmed_end now is %u.\n", confirmed_end);
+    	}
     }
 
     void calculate_basic_parts(uint32_t num)
@@ -269,51 +266,56 @@ implementation {
         }
     }
 
+    void process_new_number(uint16_t seq, uint32_t num)
+    {
+        register_new_number(seq, num);
+        calculate_basic_parts(num);
+        insert_into_heap(num);
+
+        if(small_heap_size > big_heap_size + 1)
+        {
+            uint32_t temp = small_heap[0];
+            extract_small_heap();
+            big_heap[big_heap_size] = temp;
+            big_heap_size += 1;
+            adjust_big_heap();
+        }
+        else if(small_heap_size < big_heap_size - 1)
+        {
+            uint32_t temp = big_heap[0];
+            extract_big_heap();
+            small_heap[small_heap_size] = temp;
+            small_heap_size += 1;
+            adjust_small_heap();
+        }
+
+        printf("Already adjusted heaps.\n");
+        printfflush();
+    }
+
     event message_t* DataReceive.receive(message_t* msg, void* payload, uint8_t len)
     {
-        Data* rcv_payload;
+        Data_Msg* rcv_payload;
         uint16_t seq;
         uint32_t num;
-        if(len == sizeof(Data))
+        if(len == sizeof(Data_Msg))
         {
             printf("New data has been successfully received.\n");
             printfflush();
 
-            rcv_payload = (Data*)payload;
+            rcv_payload = (Data_Msg*)payload;
             seq = rcv_payload->seq;
             num = rcv_payload->num;
-            printf("Sequence is %u and number is %u.\n", seq, num);
+            printf("Sequence is %u and number is %lu.\n", seq, num);
             printfflush();
 
-            register_new_number(seq, num);
-            calculate_basic_parts(num);
-            insert_into_heap(num);
-
-            if(small_heap_size > big_heap_size + 1)
-            {
-                uint32_t temp = small_heap[0];
-                extract_heap(1);
-                big_heap_size += 1;
-                big_heap[big_heap_size - 1] = temp;
-                adjust_heap(0);
-            }
-            else if(small_heap_size < big_heap_size - 1)
-            {
-                uint32_t temp = big_heap[0];
-                extract_heap(0);
-                small_heap_size += 1;
-                small_heap[small_heap_size - 1] = temp;
-                adjust_heap(1);
-            }
-
-            printf("Already adjusted heaps.\n");
-            printfflush();
+            process_new_number(seq, num);
         }
         return msg;
     }
 
     event message_t* ResponseReceive.receive(message_t* msg, void* payload, uint8_t len)
     {
-
+        return msg;
     }
 }
