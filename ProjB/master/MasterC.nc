@@ -85,13 +85,18 @@ implementation {
             uint16_t i;
     		max_seq = max_seq > seq ? max_seq : seq;
 
-    		for (i = confirmed_end; i <= DATA_TOTAL; i++)
+    		for (i = confirmed_end + 1; i <= max_seq; i++)
     		{
     			if ((received[i / 8] & (1 << (i % 8))) == 0)
     				break;
     		}
     		confirmed_end = i - 1;
     		printf("confirmed_end now is %u.\n", confirmed_end);
+
+            if(max_seq > confirmed_end + 1)
+            {
+                send_request(confirmed_end + 1);
+            }
     	}
     }
 
