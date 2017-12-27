@@ -155,61 +155,61 @@ implementation {
         }
     }
 
-    void extract_heap(uint8_t is_small)
+    void extract_small_heap()
     {
         uint16_t pos = 0;
-        if(is_small)
+        small_heap_size -= 1;
+        small_heap[0] = small_heap[small_heap_size];
+
+        while(pos < small_heap_size)
         {
-            small_heap_size -= 1;
-            small_heap[0] = small_heap[small_heap_size];
+            uint16_t i = 2 * pos + 1, j = 2 * pos + 2;
+            uint16_t smaller;
+            uint32_t temp;
 
-            while(pos < small_heap_size)
-            {
-                uint16_t i = 2 * pos + 1, j = 2 * pos + 2;
-                uint16_t smaller;
-                uint32_t temp;
+            if(i >= small_heap_size)
+                break;
+            else if(j == small_heap_size)
+                smaller = i;
+            else
+                smaller = small_heap[i] < small_heap[j] ? i : j;
 
-                if(i >= small_heap_size)
-                    break;
-                else if(j == small_heap_size)
-                    smaller = i;
-                else
-                    smaller = small_heap[i] < small_heap[j] ? i : j;
+            if(small_heap[pos] <= small_heap[smaller])
+                break;
 
-                if(small_heap[pos] <= small_heap[smaller])
-                    break;
-
-                temp = small_heap[pos];
-                small_heap[pos] = small_heap[smaller];
-                small_heap[smaller] = temp;
-                pos = smaller;
-            }
+            temp = small_heap[pos];
+            small_heap[pos] = small_heap[smaller];
+            small_heap[smaller] = temp;
+            pos = smaller;
         }
-        else
+    }
+
+    void extract_big_heap()
+    {
+        uint16_t pos = 0;
+        big_heap_size -= 1;
+        big_heap[0] = big_heap[big_heap_size];
+
+        while(pos < big_heap_size)
         {
-            big_heap_size -= 1;
-            big_heap[0] = big_heap[big_heap_size];
+            uint16_t i = 2 * pos + 1, j = 2 * pos + 2;
+            uint16_t bigger;
+            uint32_t temp;
 
-            while(pos < big_heap_size)
-            {
-                uint16_t ii = 2 * pos + 1, j = 2 * pos + 2;
-                uint16_t bigger;
-                uint32_t temp;
+            if(i >= big_heap_size)
+                break;
+            else if(j == big_heap_size)
+                bigger = i;
+            else
+                bigger = big_heap[i] > big_heap[j] ? i : j;
 
-                if(i >= big_heap_size)
-                    break;
-                else if(j == big_heap_size)
-                    bigger = i;
-                else bigger = big_heap[i] > big_heap[j] ? i : j;
+            if(big_heap[pos] >= big_heap[bigger])
+                break;
 
-                if(big_heap[pos] >= big_heap[bigger])
-                    break;
-
-                temp = big_heap[pos];
-                big_heap[pos] = big_heap[bigger];
-                big_heap[bigger] = temp;
-                pos = bigger;
-            }
+            temp = big_heap[pos];
+            big_heap[pos] = big_heap[bigger];
+            big_heap[bigger] = temp;
+            pos = bigger;
         }
     }
 
@@ -240,13 +240,13 @@ implementation {
             {
                 small_heap[small_heap_size] = num;
                 small_heap_size += 1;
-                adjust_heap(1);
+                adjust_small_heap();
             }
             else
             {
                 big_heap[big_heap_size] = num;
                 big_heap_size += 1;
-                adjust_heap(0);
+                adjust_big_heap();
             }
         }
     }
