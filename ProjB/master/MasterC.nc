@@ -28,6 +28,8 @@ implementation {
     uint16_t max_seq = 0;
     uint16_t confirmed_end = 0;
 
+    uint8_t vice_num = 0;
+
     uint8_t received[251];
     uint32_t small_heap[HALF_DATA_TOTAL], big_heap[HALF_DATA_TOTAL];
     uint16_t small_heap_size = 0, big_heap_size = 0;
@@ -262,6 +264,19 @@ implementation {
             payload->median = (big_heap[0] + small_heap[0]) / 2;
 
             call ResultSend.send(TARGET_ID, &result_pkt, sizeof(Result_Msg));
+        }
+    }
+
+    void send_request(uint16_t seq)
+    {
+        Request_Msg* payload;
+        payload = (Request_Msg*)(call RequestSendPacket.getPayload(&request_pkt, sizeof(Request_Msg)));
+        if(payload != NULL)
+        {
+            payload->seq = seq;
+
+            call RequestSend.send(TOS_NODE_ID + vice_num + 1, &request_pkt, sizeof(Request_Msg));
+            vice_num = 1 - vice_num;
         }
     }
 
