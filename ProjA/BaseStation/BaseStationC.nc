@@ -10,24 +10,28 @@ implementation {
     components BaseStationP as App;
     components ActiveMessageC;
     components SerialActiveMessageC;
-    components new SerialAMSenderC(AM_SENSOR);
-    components new SerialAMReceiverC(AM_MODIFY);
-    components new AMSenderC(AM_MODIFY);
-    components new AMReceiverC(AM_SENSOR);
+    components new TimerMilliC() as Timer;
+    components new SerialAMSenderC(AM_0_TO_PC);
+    components new SerialAMReceiverC(AM_PC_TO_0);
+    components new AMSenderC(AM_0_TO_1);
+    components new AMReceiverC(AM_1_TO_0);
 
     App.Boot -> MainC;
     App.Leds -> LedsC;
+    App.Timer -> Timer;
 
     App.RadioControl -> ActiveMessageC;
     App.SerialControl -> SerialActiveMessageC;
 
-    App.UartSend -> SerialAMSenderC;
-    App.UartReceive -> SerialAMReceiverC;
     App.UartPacket -> SerialAMSenderC;
     App.UartAMPacket -> SerialAMSenderC;
+    App.UartSend -> SerialAMSenderC;
+    App.UartReceive -> SerialAMReceiverC;
 
-    App.RadioSend -> AMSenderC;
-    App.RadioReceive -> AMReceiverC;
     App.RadioPacket -> AMSenderC;
     App.RadioAMPacket -> AMSenderC;
+    App.RadioSend -> AMSenderC;
+    App.RadioReceive -> AMReceiverC;
+
+    App.ModifyAck -> AMSenderC;
 }

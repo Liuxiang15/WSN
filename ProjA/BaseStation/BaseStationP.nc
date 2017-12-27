@@ -4,6 +4,7 @@ module BaseStationP @safe() {
     uses {
         interface Boot;
         interface Leds;
+        interface Timer<TMilli> as Timer;
         interface SplitControl as SerialControl;
         interface SplitControl as RadioControl;
 
@@ -16,6 +17,8 @@ module BaseStationP @safe() {
         interface Receive as RadioReceive;
         interface Packet as RadioPacket;
         interface AMPacket as RadioAMPacket;
+
+        interface PacketAcknowledgements as ModifyAck;
     }
 }
 
@@ -49,18 +52,25 @@ implementation {
         }
 
         call RadioControl.start();
-        call SerialControl.start();
     }
 
     event void RadioControl.startDone(error_t error) {
         if (error == SUCCESS) {
             radioFull = FALSE;
+            call SerialControl.start();
+        }
+        else {
+            call RadioControl.start();
         }
     }
 
     event void SerialControl.startDone(error_t error) {
         if (error == SUCCESS) {
             uartFull = FALSE;
+            call Timer.startPeriodic(TIMER_PERIOD_MILLI);
+        }
+        else {
+            call SerialControl.start();
         }
     }
 
@@ -72,12 +82,16 @@ implementation {
 
     }
 
+    event void Timer.fired() {
+        call Leds.led1Toggle();
+    }
+
     event message_t* RadioReceive.receive(message_t* msg, void* payload, uint8_t len) {
-        message_t* ret = msg;
+        SensorMsg* dummy = (SensorMsg*)payload;
         if (len == sizeof(SensorMsg)) {
+            call Leds.led2Toggle();
             atomic if (!uartFull) {
-                ret = uartQueue[uartIn];
-                uartQueue[uartIn] = msg;
+                uartQueueBufs[uartIn] = *msg;
                 if (++uartIn >= QUEUE_SIZE) {
                     uartIn = 0;
                 }
@@ -90,7 +104,7 @@ implementation {
                 }
             }
         }
-        return ret;
+        return msg;
     }
 
     task void uartSendTask() {
@@ -107,7 +121,7 @@ implementation {
         call UartPacket.clear(msg);
         call UartAMPacket.setSource(msg, src);
 
-        if (call UartSend.send(AM_BROADCAST_ADDR, uartQueue[uartOut], sizeof(SensorMsg)) == SUCCESS) {
+        if (call UartSend.send(AM_BROADCAST_ADDR, msg, sizeof(SensorMsg)) == SUCCESS) {
 
         }
         else {
@@ -130,11 +144,10 @@ implementation {
     }
 
     event message_t* UartReceive.receive(message_t* msg, void* payload, uint8_t len) {
-        message_t *ret = msg;
         if (len == sizeof(ModifyMsg)) {
+            call Leds.led1Toggle();
             atomic if (!radioFull) {
-                ret = radioQueue[radioIn];
-                radioQueue[radioIn] = msg;
+                radioQueueBufs[radioIn] = *msg;
                 if (++radioIn >= QUEUE_SIZE) {
                     radioIn = 0;
                 }
@@ -147,7 +160,7 @@ implementation {
                 }
             }
         }
-        return ret;
+        return msg;
     }
 
     task void radioSendTask() {
@@ -163,23 +176,27 @@ implementation {
         source = call UartAMPacket.source(msg);
         call RadioPacket.clear(msg);
         call RadioAMPacket.setSource(msg, source);
+        call ModifyAck.requestAck(msg);
 
-        if (call RadioSend.send(AM_BROADCAST_ADDR, msg, sizeof(ModifyMsg)) == SUCCESS) {
+        if (call RadioSend.send(NODE_1, msg, sizeof(ModifyMsg)) == SUCCESS) {
 
         }
         else {
-            post radioSendTask();
+
         }
     }
 
     event void RadioSend.sendDone(message_t* msg, error_t error) {
         if (error == SUCCESS) {
-            atomic if (msg == radioQueue[radioOut]) {
-                if (++radioOut >= QUEUE_SIZE) {
-                    radioOut = 0;
-                }
-                if (radioFull) {
-                    radioFull = FALSE;
+            if (call ModifyAck.wasAcked(msg)) {
+                call Leds.led0Toggle();
+                atomic if (msg == radioQueue[radioOut]) {
+                    if (++radioOut >= QUEUE_SIZE) {
+                        radioOut = 0;
+                    }
+                    if (radioFull) {
+                        radioFull = FALSE;
+                    }
                 }
             }
         }
