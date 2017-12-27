@@ -39,6 +39,9 @@ implementation {
     uint8_t completed = 0;
     message_t result_pkt, request_pkt;
 
+    void send_result();
+    void send_request(uint16_t);
+
     event void Boot.booted()
     {
         uint16_t i;
@@ -55,7 +58,7 @@ implementation {
         {
             if(max_seq > confirmed_end + 1)
             {
-                send_request(confirmed_end + 1 + start_seq) % DATA_TOTAL;
+                send_request((confirmed_end + 1 + start_seq) % DATA_TOTAL);
             }
         }
         else if(completed == 1)
@@ -107,7 +110,7 @@ implementation {
     				break;
     		}
     		confirmed_end = i - 1;
-    		printf("confirmed_end now is %u.\n", confirmed_end);
+    		//printf("confirmed_end now is %u.\n", confirmed_end);
     	}
     }
 
@@ -279,6 +282,8 @@ implementation {
             payload->average = sum / DATA_TOTAL;
             payload->median = (big_heap[0] + small_heap[0]) / 2;
 
+            printf("r(%lu,%lu,%lu,%lu,%lu)\n", payload->max, payload->min, payload->sum, payload->average, payload->median);
+            printfflush();
             call ResultSend.send(TARGET_ID, &result_pkt, sizeof(Result_Msg));
         }
     }
@@ -286,6 +291,8 @@ implementation {
     void send_request(uint16_t seq)
     {
         Request_Msg* payload;
+        //printf("Q[%u, %u]\n", max_seq, confirmed_end);
+        //printfflush();
         payload = (Request_Msg*)(call RequestSendPacket.getPayload(&request_pkt, sizeof(Request_Msg)));
         if(payload != NULL)
         {
@@ -300,8 +307,8 @@ implementation {
     {
         if(&result_pkt == msg && err == SUCCESS)
         {
-            printf("Result pkt has been successfully sent.\n");
-            printfflush();
+            //printf("Result pkt has been successfully sent.\n");
+            //printfflush();
         }
     }
 
@@ -309,13 +316,15 @@ implementation {
     {
         if(&request_pkt == msg && err == SUCCESS)
         {
-            printf("Request pkt has been successfully sent.\n");
-            printfflush();
+            //printf("Request pkt has been successfully sent.\n");
+            //printfflush();
         }
     }
 
     void process_new_number(uint16_t seq, uint32_t num)
     {
+        if((received[seq / 8] & (1 << (seq % 8))) != 0)
+            return;
         register_new_number(seq, num);
         calculate_basic_parts(num);
         insert_into_heap(num);
@@ -327,7 +336,7 @@ implementation {
             big_heap[big_heap_size] = temp;
             big_heap_size += 1;
             adjust_big_heap();
-        }
+        }//
         else if(small_heap_size < big_heap_size - 1)
         {
             uint32_t temp = big_heap[0];
@@ -341,31 +350,33 @@ implementation {
         {
             send_result();
             completed = 1;
+            printf("C[%u,%u]\n", received_sum, DATA_TOTAL);
+            printfflush();
         }
 
-        printf("Already adjusted heaps.\n");
+        printf("Done.\n");
         printfflush();
     }
 
     event message_t* DataReceive.receive(message_t* msg, void* payload, uint8_t len)
     {
-        if(completed != 0)
-            return msg;
-
         Data_Msg* rcv_payload;
         uint16_t seq;
         uint32_t num;
+        if(completed != 0)
+            return msg;
+
         if(len == sizeof(Data_Msg))
         {
-            printf("New data has been successfully received.\n");
-            printfflush();
-
             rcv_payload = (Data_Msg*)payload;
             seq = rcv_payload->seq;
             num = rcv_payload->num;
-            printf("Sequence is %u and number is %lu.\n", seq, num);
-            printfflush();
 
+
+            printf("R[%u, %lu, %u].\n", seq, num, received_sum);
+            printfflush();
+            //printf("M[%u, %u, %u].\n", max_seq, confirmed_end, received_sum);
+            //printfflush();
             process_new_number(seq, num);
         }
         return msg;
@@ -373,12 +384,11 @@ implementation {
 
     event message_t* ResponseReceive.receive(message_t* msg, void* payload, uint8_t len)
     {
-        if(completed != 0)
-            return msg;
-
         Response_Msg* rcv_payload;
         uint16_t seq;
         uint32_t num;
+        if(completed != 0)
+            return msg;
         if(len == sizeof(Response_Msg))
         {
             rcv_payload = (Response_Msg*) payload;
@@ -395,7 +405,7 @@ implementation {
         if(len == sizeof(ACK_Msg))
         {
             rcv_payload = (ACK_Msg*)payload;
-            if(payload->group == GROUP_ID)
+            if(rcv_payload->group == GROUP_ID)
             {
                 completed = 2;
             }
