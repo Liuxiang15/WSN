@@ -32,7 +32,7 @@ implementation {
     uint32_t small_heap[HALF_DATA_TOTAL], big_heap[HALF_DATA_TOTAL];
     uint16_t small_heap_size = 0, big_heap_size = 0;
 
-    uint32_t max = 0, min = 1 << 32 - 1, sum = 0, average = 0, median = 0;
+    uint32_t max = 0, min = UINT_MAX, sum = 0, average = 0, median = 0;
 
     message_t result_pkt, request_pkt;
 
@@ -87,7 +87,7 @@ implementation {
             uint16_t i;
     		max_seq = max_seq > seq ? max_seq : seq;
 
-    		for (i = confirmed_end + 1; i != start_seq; i = i % DATA_TOTAL + 1)
+    		for (i = confirmed_end + 1; i <= max_seq; i++)
     		{
     			if ((received[i / 8] & (1 << (i % 8))) == 0)
     				break;

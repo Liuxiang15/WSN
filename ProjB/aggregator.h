@@ -46,4 +46,8 @@ enum {
     GROUP_ID = 20,
 };
 
+enum {
+    UINT_MAX = 4294967295,
+};
+
 #endif
