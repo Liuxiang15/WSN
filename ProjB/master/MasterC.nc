@@ -103,29 +103,47 @@ implementation {
         sum = sum + num;
     }
 
-    void adjust_heap(uint8_t is_small)
+    void adjust_small_heap()
     {
-        uint16_t pos = is_small ? small_heap_size - 1: big_heap_size - 1;
+        uint16_t pos = small_heap_size - 1;
         while(pos != 0)
         {
             uint8_t swapped = 0;
             uint16_t parent = (pos - 1) / 2;
             uint32_t temp;
-            if(is_small && small_heap[parent] > small_heap[pos])
+            if(small_heap[parent] > small_heap[pos])
             {
                 swapped = 1;
                 temp = small_heap[pos];
                 small_heap[pos] = small_heap[parent];
                 small_heap[parent] = temp;
             }
-            else if(!is_small && big_heap[parent] < big_heap[pos])
+            if(swapped == 1)
+            {
+                pos = parent;
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
+
+    void adjust_big_heap()
+    {
+        uint16_t pos = big_heap_size - 1;
+        while(pos != 0)
+        {
+            uint8_t swapped = 0;
+            uint16_t parent = (pos - 1) / 2;
+            uint32_t temp;
+            if(big_heap[parent] < big_heap[pos])
             {
                 swapped = 1;
                 temp = big_heap[pos];
                 big_heap[pos] = big_heap[parent];
                 big_heap[parent] = temp;
             }
-
             if(swapped == 1)
             {
                 pos = parent;
