@@ -155,6 +155,8 @@ implementation {
             call Leds.led2Toggle();
             rcv_payload = (Data_Msg*)payload;
             numbers[rcv_payload->seq - 1] = rcv_payload->num;
+            //printf("n[%u] = %u.\n", rcv_payload->seq - 1, rcv_payload->num);
+            printfflush();
         }
         return msg;
     }

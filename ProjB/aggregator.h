@@ -49,6 +49,7 @@ enum {
 };
 
 enum {
+    TARGET_ID = 0,
     GROUP_ID = 10,
     MASTER_ID = 31,
     ASSIST_LEFT_ID = 32,
