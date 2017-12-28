@@ -144,8 +144,8 @@ implementation {
             payload->average = sum / DATA_TOTAL;
             payload->median = (big_heap[0] + small_heap[0]) / 2;
 
-            printf("r(%lu,%lu,%lu,%lu,%lu)\n", payload->max, payload->min, payload->sum, payload->average, payload->median);
-            printfflush();
+            //printf("r(%lu,%lu,%lu,%lu,%lu)\n", payload->max, payload->min, payload->sum, payload->average, payload->median);
+            //printfflush();
             call ResultSend.send(TARGET_ID, &result_pkt, sizeof(Result_Msg));
         }
     }
@@ -153,15 +153,15 @@ implementation {
     void send_request(uint16_t seq)
     {
         Request_Msg* payload;
-        printf("Q %u %u\n", seq, start_seq);
+        //printf("Q %u %u\n", seq, start_seq);
         //printfflush();
         payload = (Request_Msg*)(call RequestSendPacket.getPayload(&request_pkt, sizeof(Request_Msg)));
         if(payload != NULL)
         {
             payload->seq = seq;
 
-            call RequestSend.send(TOS_NODE_ID + 1, &request_pkt, sizeof(Request_Msg));
-            //vice_num = 1 - vice_num;
+            call RequestSend.send(TOS_NODE_ID + vice_num + 1, &request_pkt, sizeof(Request_Msg));
+            vice_num = 1 - vice_num;
         }
     }
 
@@ -169,7 +169,7 @@ implementation {
     {
         if(&result_pkt == msg && err == SUCCESS)
         {
-            //call Leds.led0Toggle();
+            call Leds.led2Toggle();
             //printf("Result pkt has been successfully sent.\n");
             //printfflush();
         }
@@ -268,8 +268,8 @@ implementation {
             rcv_payload = (Response_Msg*) payload;
             seq = rcv_payload->seq;
             num = rcv_payload->num;
-            printf("get=%u %lu\n", seq, num);
-            printfflush();
+            //printf("get=%u %lu\n", seq, num);
+            //printfflush();
             process_new_number(seq, num);
         }
         return msg;

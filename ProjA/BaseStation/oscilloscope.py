@@ -2,8 +2,8 @@
 import sys
 import tos
 
-AM_0_TO_PC = 66
-AM_PC_TO_0 = 77
+AM_0_TO_PC = 0x96
+AM_PC_TO_0 = 0x97
 
 class SensorMsg(tos.Packet):
     def __init__(self, packet = None):
@@ -23,7 +23,7 @@ class ModifyMsg(tos.Packet):
         packet)
 
 if '-h' in sys.argv:
-    print "Usage:", sys.argv[0], "serial@/dev/ttyUSB0:115200"
+    print "Usage:", sys.argv[0], "serial@/dev/ttyUSB1:115200"
     sys.exit()
 
 am = tos.AM()

@@ -2,16 +2,16 @@
 #define CONFIG_H
 
 enum {
-    AM_2_TO_1 = 44,
-    AM_1_TO_0 = 55,
-    AM_0_TO_PC = 66,
-    AM_PC_TO_0 = 77,
-    AM_0_TO_1 = 88,
-    AM_1_TO_2 = 99,
+    AM_2_TO_1 = 0x94,
+    AM_1_TO_0 = 0x95,
+    AM_0_TO_PC = 0x96,
+    AM_PC_TO_0 = 0x97,
+    AM_0_TO_1 = 0x98,
+    AM_1_TO_2 = 0x99,
 
-    NODE_0 = 31,
-    NODE_1 = 32,
-    NODE_2 = 33,
+    NODE_0 = 34,
+    NODE_1 = 35,
+    NODE_2 = 36,
 
     TIMER_PERIOD_MILLI = 200,
     QUEUE_SIZE = 32

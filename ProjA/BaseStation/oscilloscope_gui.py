@@ -6,8 +6,8 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import pyqtgraph as pg
 
-NODE1_ID = 32
-NODE2_ID = 33
+NODE1_ID = 35
+NODE2_ID = 36
 
 node1_previous_counter = -1
 node2_previous_counter = -1
@@ -57,16 +57,19 @@ class CollectData(QThread):
             msg.illumination = params[4]
             msg.timepoint = params[5]
 
+            global node1_previous_counter
+            global node2_previous_counter
+
             if msg.nodeid == NODE1_ID:
                 if msg.counter != node1_previous_counter:
-                    previous_counter = msg.counter
+                    node1_previous_counter = msg.counter
                     node1_temp_list.append(msg.temperature)
                     node1_hum_list.append(msg.humidity)
                     node1_ill_list.append(msg.illumination)
                     f.write('%d %d %d %d %d %d\n' % (msg.nodeid, msg.counter, msg.temperature, msg.humidity, msg.illumination, msg.timepoint))
             elif msg.nodeid == NODE2_ID:
                 if msg.counter != node2_previous_counter:
-                    previous_counter = msg.counter
+                    node2_previous_counter = msg.counter
                     node2_temp_list.append(msg.temperature)
                     node2_hum_list.append(msg.humidity)
                     node2_ill_list.append(msg.illumination)

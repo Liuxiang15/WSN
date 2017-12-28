@@ -42,18 +42,18 @@ typedef nx_struct ACK_Msg
 
 enum {
     AM_DATA_MSG = 0x0,
-    AM_RESULT_MSG = 0x60,
-    AM_REQUEST_MSG = 0x70,
-    AM_RESPONSE_MSG = 0x80,
+    AM_RESULT_MSG = 0x0,
+    AM_REQUEST_MSG = 0x98,
+    AM_RESPONSE_MSG = 0x99,
     AM_ACK_MSG = 0x0,
 };
 
 enum {
     TARGET_ID = 0,
-    GROUP_ID = 10,
-    MASTER_ID = 31,
-    ASSIST_LEFT_ID = 32,
-    ASSIST_RIGHT_ID = 33,
+    GROUP_ID = 11,
+    MASTER_ID = 34,
+    ASSIST_LEFT_ID = 35,
+    ASSIST_RIGHT_ID = 36,
 };
 
 enum {
